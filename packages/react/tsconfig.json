@@ -4,6 +4,7 @@
     "sourceMap": true,
     "noImplicitThis": false,
     "noImplicitAny": true,
+    "declaration": false,
     "module": "esnext",
     "target": "es5",
     "jsx": "react",

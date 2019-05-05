@@ -5,6 +5,7 @@
     "noImplicitThis": false,
     "noImplicitAny": true,
     "module": "esnext",
+    "declaration": true,
     "target": "es5",
     "jsx": "react",
     "allowSyntheticDefaultImports": true,

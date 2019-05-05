@@ -1,5 +1,5 @@
 {
-  "name": "@ts-react/react",
+  "name": "@ts-react/shared",
   "version": "0.0.1",
   "main": "dist/index.js",
   "private": true,
@@ -14,9 +14,7 @@
       "git add"
     ]
   },
-  "dependencies": {
-    "@ts-react/shared": "0.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/jest": "^24.0.12",
     "jest": "^24.7.1",
