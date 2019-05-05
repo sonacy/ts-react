@@ -1,0 +1,28 @@
+{
+  "name": "@ts-react/scheduler",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "private": true,
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "jest --watch-all",
+    "precommit": "lint-staged"
+  },
+  "lint-staged": {
+    "src/**/*": [
+      "tslint --fix",
+      "git add"
+    ]
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/jest": "^24.0.12",
+    "jest": "^24.7.1",
+    "husky": "^2.2.0",
+    "prettier": "^1.17.0",
+    "tslint": "^5.16.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-loader": "^3.5.4",
+    "typescript": "^3.4.5"
+  }
+}

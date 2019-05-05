@@ -1,0 +1,14 @@
+{
+  "name": "ts-react",
+  "private": true,
+  "scripts": {},
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "nohoist": []
+  },
+  "devDependencies": {
+    "lerna": "^3.13.4"
+  }
+}
