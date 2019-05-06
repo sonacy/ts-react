@@ -15,7 +15,8 @@
     ]
   },
   "dependencies": {
-    "@ts-react/shared": "0.0.1"
+    "@ts-react/shared": "0.0.1",
+    "@ts-react/fiber": "0.0.1"
   },
   "devDependencies": {
     "@types/jest": "^24.0.12",

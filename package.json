@@ -1,7 +1,9 @@
 {
   "name": "ts-react",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "build": "lerna run build --scope={@ts-react/fiber,@ts-react/react,@ts-react/scheduler,@ts-react/shared}"
+  },
   "workspaces": {
     "packages": [
       "packages/*"
