@@ -18,7 +18,7 @@ const NORMAL_PRIORITY_TIMEOUT = 5000
 const LOW_PRIORITY_TIMEOUT = 10000
 const IDLE_PRIORITY = maxSigned31BitInt
 
-enum PriorityLevel {
+export enum PriorityLevel {
 	ImmediatePriority,
 	UserBlockingPriority,
 	NormalPriority,
