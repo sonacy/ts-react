@@ -1,4 +1,4 @@
-import { REACT_ELEMENT_TYPE } from '@ts-react/shared'
+import { REACT_ELEMENT_TYPE, ReactElement } from '@ts-react/shared'
 
 const ReactElement = (
 	type: any,
@@ -14,14 +14,6 @@ const ReactElement = (
 		$$typeof: REACT_ELEMENT_TYPE,
 	}
 	return element
-}
-
-export type ReactElement = {
-	type: any
-	key: string | undefined
-	ref: any
-	props: any
-	$$typeof: typeof REACT_ELEMENT_TYPE
 }
 
 export function createElement(type: any, config: any, children: any) {

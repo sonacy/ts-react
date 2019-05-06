@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@ts-react/shared": "0.0.1",
-    "@ts-react/react": "0.0.1",
     "@ts-react/scheduler": "0.0.1"
   },
   "devDependencies": {

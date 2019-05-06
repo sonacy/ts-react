@@ -1,4 +1,3 @@
-import { ReactElement } from '@ts-react/react'
 import { FiberRoot } from './fiberRoot'
 import {
 	requestCurrentTime,
@@ -8,6 +7,7 @@ import {
 import { Fiber } from './fiber'
 import { ExpirationTime } from './expirationTime'
 import { createUpdate, enqueueUpdate } from './updateQueue'
+import { ReactElement } from '@ts-react/shared'
 
 export const updateContainer = (
 	element: ReactElement,

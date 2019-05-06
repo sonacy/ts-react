@@ -1,5 +1,5 @@
-import { ReactElement } from './element'
 import { FiberRoot, updateContainer } from '@ts-react/fiber'
+import { ReactElement } from '@ts-react/shared'
 
 export type DOMContainer =
 	| (Element & {
