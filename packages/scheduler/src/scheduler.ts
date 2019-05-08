@@ -26,7 +26,7 @@ export enum PriorityLevel {
 	IdlePriority,
 }
 
-type CallbackNode = {
+export type CallbackNode = {
 	callback: (didTimeout: boolean) => any
 	priorityLevel: PriorityLevel
 	expirationTime: number

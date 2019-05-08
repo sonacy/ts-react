@@ -14,9 +14,9 @@ export class Fiber {
 	index: number
 	ref: any
 	pendingProps: any
-	memorizedProps: any
+	memoizedProps: any
 	updateQueue: UpdateQueue<any> | null
-	memorizedState: any
+	memoizedState: any
 	effectTag: SideEffectTag
 	nextEffect: Fiber | null
 	firstEffect: Fiber | null
@@ -37,9 +37,9 @@ export class Fiber {
 		this.index = 0
 		this.ref = null
 		this.pendingProps = pendingProps
-		this.memorizedProps = null
+		this.memoizedProps = null
 		this.updateQueue = null
-		this.memorizedState = null
+		this.memoizedState = null
 		this.effectTag = NoEffect
 		this.nextEffect = null
 		this.firstEffect = null
@@ -48,4 +48,35 @@ export class Fiber {
 		this.childExpirationTime = NoWork
 		this.alternate = null
 	}
+}
+
+export const createWorkInProgress = (current: Fiber, pendingProps: any) => {
+	let workInProgress = current.alternate
+	if (workInProgress === null) {
+		workInProgress = new Fiber(current.tag, pendingProps, current.key)
+		workInProgress.stateNode = current.stateNode
+		workInProgress.elementType = current.elementType
+		workInProgress.type = current.type
+		workInProgress.alternate = current
+		current.alternate = workInProgress
+	} else {
+		workInProgress.pendingProps = pendingProps
+		workInProgress.effectTag = NoEffect
+		workInProgress.nextEffect = null
+		workInProgress.lastEffect = null
+		workInProgress.firstEffect = null
+	}
+
+	workInProgress.childExpirationTime = current.childExpirationTime
+	workInProgress.expirationTime = current.expirationTime
+
+	workInProgress.child = current.child
+	workInProgress.memoizedProps = current.memoizedProps
+	workInProgress.memoizedState = current.memoizedState
+	workInProgress.updateQueue = current.updateQueue
+
+	workInProgress.sibling = current.sibling
+	workInProgress.index = current.index
+	workInProgress.ref = current.ref
+	return workInProgress
 }

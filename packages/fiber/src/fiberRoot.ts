@@ -1,5 +1,6 @@
 import { Fiber } from './fiber'
 import { HostRoot } from '@ts-react/shared'
+import { CallbackNode } from '@ts-react/scheduler'
 import { ExpirationTime, NoWork } from './expirationTime'
 
 export class FiberRoot {
@@ -9,6 +10,9 @@ export class FiberRoot {
 	firstPendingTime: ExpirationTime
 	lastPendingTime: ExpirationTime
 	pingTime: ExpirationTime
+	pendingCommitExpirationTime: ExpirationTime
+	callbackExpirationTime: ExpirationTime
+	callbackNode: CallbackNode | null
 
 	constructor(containerInfo: any) {
 		this.containerInfo = containerInfo
@@ -19,5 +23,8 @@ export class FiberRoot {
 		this.firstPendingTime = NoWork
 		this.lastPendingTime = NoWork
 		this.pingTime = NoWork
+		this.pendingCommitExpirationTime = NoWork
+		this.callbackExpirationTime = NoWork
+		this.callbackNode = null
 	}
 }
