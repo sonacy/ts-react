@@ -24,6 +24,7 @@ import {
 import { Fiber, createWorkInProgress } from './fiber'
 import { FiberRoot } from './fiberRoot'
 import { HostRoot } from '@ts-react/shared'
+import { beginWork } from './beginwork'
 
 enum WorkPhase {
 	NotWorking,
@@ -263,6 +264,17 @@ function workLoop() {
 }
 
 function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
+	const current = unitOfWork.alternate
+
+	let next = beginWork(current, unitOfWork, renderExpirationTime)
+
+	if (next === null) {
+		next = completeUnitOfWork(unitOfWork)
+	}
+	return next
+}
+
+function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
 	return null
 }
 
