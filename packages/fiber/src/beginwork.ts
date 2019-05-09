@@ -7,6 +7,7 @@ import {
 	HostRoot,
 	HostText,
 } from '@ts-react/shared'
+import { renderWithHooks, bailoutHooks } from './fiberHooks'
 
 let didReceiveUpdate: boolean = false
 
@@ -38,7 +39,16 @@ export function beginWork(
 	workInProgress.expirationTime = NoWork
 	switch (workInProgress.tag) {
 		case FunctionComponent: {
-			// TODO: update function component
+			const Component = workInProgress.type
+			const resolvedProps = workInProgress.pendingProps
+			// TODO: lazy component props
+			return updateFunctionComponent(
+				current,
+				workInProgress,
+				Component,
+				resolvedProps,
+				renderExpirationTime
+			)
 		}
 		case HostComponent: {
 			// TODO: update host component
@@ -69,5 +79,48 @@ function bailoutOnAlreadyFinishdWork(
 	} else {
 		cloneChildFibers(current, workInProgress) // TODO why?
 		return workInProgress.child
+	}
+}
+
+function updateFunctionComponent(
+	current: Fiber | null,
+	workInProgress: Fiber,
+	Component: Function,
+	nextProps: any,
+	renderExpirationTime: ExpirationTime
+) {
+	// TODO: context
+	const nextChildren = renderWithHooks(
+		current,
+		workInProgress,
+		Component,
+		nextProps,
+		renderExpirationTime
+	)
+
+	if (current !== null && !didReceiveUpdate) {
+		bailoutHooks(current, workInProgress, renderExpirationTime)
+		return bailoutOnAlreadyFinishdWork(
+			current,
+			workInProgress,
+			renderExpirationTime
+		)
+	}
+
+	reconcileChildren(current, workInProgress, nextChildren, renderExpirationTime)
+
+	return workInProgress.child
+}
+
+function reconcileChildren(
+	current: Fiber | null,
+	workInProgress: Fiber,
+	nextChildren: any,
+	renderExpirationTime: ExpirationTime
+) {
+	if (current === null) {
+		// TODO: mount
+	} else {
+		// TODO: update
 	}
 }
