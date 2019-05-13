@@ -68,6 +68,12 @@ let interruptedBy: Fiber | null = null
 
 let currentEventTime: ExpirationTime = NoWork
 
+export function markRenderEventTime(expirationTime: ExpirationTime) {
+	if (expirationTime < workInProgressRootMostRecentEventTime) {
+		workInProgressRootMostRecentEventTime = expirationTime
+	}
+}
+
 export const requestCurrentTime = () => {
 	if (workPhase === RenderPhase || workPhase === CommitPhase) {
 		return msToExpirationTime(getCurrentTime())

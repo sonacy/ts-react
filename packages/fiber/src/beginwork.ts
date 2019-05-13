@@ -11,6 +11,10 @@ import { renderWithHooks, bailoutHooks } from './fiberHooks'
 
 let didReceiveUpdate: boolean = false
 
+export function markWorkInProgressReceivedUpdate() {
+	didReceiveUpdate = true
+}
+
 export function beginWork(
 	current: Fiber | null,
 	workInProgress: Fiber,
