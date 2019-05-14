@@ -1,4 +1,10 @@
-import { WorkTag, SideEffectTag, NoEffect } from '@ts-react/shared'
+import {
+	WorkTag,
+	SideEffectTag,
+	NoEffect,
+	FunctionComponent,
+	HostComponent,
+} from '@ts-react/shared'
 import { UpdateQueue } from './updateQueue'
 import { ExpirationTime, NoWork } from './expirationTime'
 
@@ -79,4 +85,22 @@ export const createWorkInProgress = (current: Fiber, pendingProps: any) => {
 	workInProgress.index = current.index
 	workInProgress.ref = current.ref
 	return workInProgress
+}
+
+export const createFiberFromTypeAndProps = (
+	type: any,
+	key: null | string,
+	pendingProps: any,
+	expirationTime: ExpirationTime
+) => {
+	let fiberTag: WorkTag = FunctionComponent
+	if (typeof type === 'string') {
+		fiberTag = HostComponent
+	}
+	// TODO: other type component
+	const fiber = new Fiber(fiberTag, pendingProps, key)
+	fiber.elementType = type
+	fiber.type = type
+	fiber.expirationTime = expirationTime
+	return fiber
 }

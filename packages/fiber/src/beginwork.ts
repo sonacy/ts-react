@@ -1,6 +1,10 @@
 import { Fiber } from './fiber'
 import { ExpirationTime, NoWork } from './expirationTime'
-import { cloneChildFibers } from './childFiber'
+import {
+	cloneChildFibers,
+	mountChildFibers,
+	reconcileChildFibers,
+} from './childFiber'
 import {
 	FunctionComponent,
 	HostComponent,
@@ -123,8 +127,18 @@ function reconcileChildren(
 	renderExpirationTime: ExpirationTime
 ) {
 	if (current === null) {
-		// TODO: mount
+		workInProgress.child = mountChildFibers(
+			workInProgress,
+			null,
+			nextChildren,
+			renderExpirationTime
+		)
 	} else {
-		// TODO: update
+		workInProgress.child = reconcileChildFibers(
+			workInProgress,
+			current.child,
+			nextChildren,
+			renderExpirationTime
+		)
 	}
 }
