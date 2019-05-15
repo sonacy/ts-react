@@ -1,6 +1,7 @@
-import { ExpirationTime } from './expirationTime'
-import { Update } from '@ts-react/shared'
+import { ExpirationTime, NoWork } from './expirationTime'
+import { Update, ShouldCapture, DidCapture, Callback } from '@ts-react/shared'
 import { Fiber } from './fiber'
+import { markRenderEventTime } from './scheduler'
 
 export const UpdateState = 0
 export const ReplaceState = 1
@@ -97,16 +98,16 @@ export const enqueueUpdate = <State>(fiber: Fiber, update: Update<State>) => {
 		queue1 = fiber.updateQueue
 		queue2 = null
 		if (queue1 === null) {
-			queue1 = fiber.updateQueue = createUpdateQueue(fiber.memorizedState)
+			queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState)
 		}
 	} else {
 		queue1 = fiber.updateQueue
 		queue2 = alternate.updateQueue
 		if (queue1 === null) {
 			if (queue2 === null) {
-				queue1 = fiber.updateQueue = createUpdateQueue(fiber.memorizedState)
+				queue1 = fiber.updateQueue = createUpdateQueue(fiber.memoizedState)
 				queue2 = alternate.updateQueue = createUpdateQueue(
-					alternate.memorizedState
+					alternate.memoizedState
 				)
 			} else {
 				queue1 = fiber.updateQueue = cloneUpdateQueue(queue2)
@@ -129,4 +130,180 @@ export const enqueueUpdate = <State>(fiber: Fiber, update: Update<State>) => {
 			queue2.lastUpdate = update
 		}
 	}
+}
+
+let hasForceUpdate: boolean = false
+
+export function resetHasForceUpdateBeforeProcessing() {
+	hasForceUpdate = false
+}
+
+export function checkHasForceUpdateAfterProcessing() {
+	return hasForceUpdate
+}
+
+function ensureWorkInProgressQueueIsAClone<State>(
+	workInProgress: Fiber,
+	queue: UpdateQueue<State>
+) {
+	const current = workInProgress.alternate
+	if (current !== null) {
+		if (queue === current.updateQueue) {
+			queue = workInProgress.updateQueue = cloneUpdateQueue(queue)
+		}
+	}
+	return queue
+}
+
+function getStateFromUpdate<State>(
+	workInProgress: Fiber,
+	queue: UpdateQueue<State>,
+	update: Update<State>,
+	prevState: State,
+	nextProps: any,
+	instance: any
+) {
+	switch (update.tag) {
+		case ReplaceState: {
+			const payload = update.payload
+			if (typeof payload === 'function') {
+				const nextState = payload.call(instance, prevState, nextProps)
+				return nextState
+			}
+			return payload
+		}
+		case CaptureUpdate: {
+			workInProgress.effectTag =
+				(workInProgress.effectTag & ~ShouldCapture) | DidCapture
+		}
+		case UpdateState: {
+			const payload = update.payload
+			let partialState
+			if (typeof payload === 'function') {
+				partialState = payload.call(instance, prevState, nextProps)
+			} else {
+				partialState = payload
+			}
+			if (partialState === null || partialState === undefined) {
+				return prevState
+			}
+			return Object.assign({}, prevState, partialState)
+		}
+		case ForceUpdate: {
+			hasForceUpdate = true
+			return prevState
+		}
+	}
+	return prevState
+}
+
+export function processUpdateQueue<State>(
+	workInProgress: Fiber,
+	queue: UpdateQueue<State>,
+	props: any,
+	instance: any,
+	renderExpirationTime: ExpirationTime
+) {
+	hasForceUpdate = false
+	queue = ensureWorkInProgressQueueIsAClone(workInProgress, queue)
+
+	let newBaseState = queue.baseState
+	let newFirstUpdate = null
+	let newExpirationTime = NoWork
+	let update = queue.firstUpdate
+	let resultState = newBaseState
+
+	while (update !== null) {
+		const updateExpirationTime = update.expirationTime
+		if (updateExpirationTime < renderExpirationTime) {
+			if (newFirstUpdate === null) {
+				newFirstUpdate = update
+				newBaseState = resultState
+			}
+			if (newExpirationTime < updateExpirationTime) {
+				newExpirationTime = updateExpirationTime
+			}
+		} else {
+			markRenderEventTime(updateExpirationTime)
+
+			resultState = getStateFromUpdate(
+				workInProgress,
+				queue,
+				update,
+				resultState,
+				props,
+				instance
+			)
+
+			const callback = update.callback
+			if (callback !== null) {
+				workInProgress.effectTag |= Callback
+				update.nextEffect = null
+				if (queue.lastEffect === null) {
+					queue.firstEffect = queue.lastEffect = update
+				} else {
+					queue.lastEffect.next = update
+					queue.lastEffect = update
+				}
+			}
+		}
+		update = update.next
+	}
+
+	let newFirstCapturedUpdate = null
+	update = queue.firstCapturedUpdate
+	while (update !== null) {
+		const updateExpirationTime = update.expirationTime
+		if (updateExpirationTime < renderExpirationTime) {
+			if (newFirstCapturedUpdate === null) {
+				newFirstCapturedUpdate = update
+				if (newFirstUpdate === null) {
+					newBaseState = resultState
+				}
+			}
+			if (newExpirationTime < updateExpirationTime) {
+				newExpirationTime = updateExpirationTime
+			}
+		} else {
+			resultState = getStateFromUpdate(
+				workInProgress,
+				queue,
+				update,
+				resultState,
+				props,
+				instance
+			)
+
+			const callback = update.callback
+			if (callback !== null) {
+				workInProgress.effectTag |= Callback
+				update.nextEffect = null
+				if (queue.lastEffect === null) {
+					queue.firstEffect = queue.lastEffect = update
+				} else {
+					queue.lastEffect.next = update
+					queue.lastEffect = update
+				}
+			}
+		}
+		update = update.next
+	}
+
+	if (newFirstUpdate === null) {
+		queue.lastUpdate = null
+	}
+	if (newFirstCapturedUpdate === null) {
+		queue.lastCapturedUpdate = null
+	} else {
+		workInProgress.effectTag |= Callback
+	}
+	if (newFirstCapturedUpdate === null && newFirstUpdate === null) {
+		newBaseState = resultState
+	}
+	queue.baseState = newBaseState
+	queue.firstCapturedUpdate = newFirstCapturedUpdate
+	queue.firstUpdate = newFirstUpdate
+
+	workInProgress.expirationTime = newExpirationTime
+	workInProgress.memoizedState = resultState
 }

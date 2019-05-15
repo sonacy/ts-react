@@ -1,5 +1,5 @@
 import { Fiber } from './fiber'
-import { ExpirationTime, NoWork } from './expirationTime'
+import { ExpirationTime, NoWork, Never } from './expirationTime'
 import {
 	cloneChildFibers,
 	mountChildFibers,
@@ -10,8 +10,11 @@ import {
 	HostComponent,
 	HostRoot,
 	HostText,
+	ContentReset,
 } from '@ts-react/shared'
 import { renderWithHooks, bailoutHooks } from './fiberHooks'
+import { shouldSetTextContent } from './domOperation'
+import { processUpdateQueue } from './updateQueue'
 
 let didReceiveUpdate: boolean = false
 
@@ -59,18 +62,91 @@ export function beginWork(
 			)
 		}
 		case HostComponent: {
-			// TODO: update host component
+			return updateHostComponent(current, workInProgress, renderExpirationTime)
 		}
 		case HostText: {
-			// TODO: update host text
+			return updateHostText(current, workInProgress)
 		}
 		case HostRoot: {
-			// TODO: update host root
+			return updateHostRoot(current, workInProgress, renderExpirationTime)
 		}
 		default: {
 			console.warn('unkown fiber, ', workInProgress)
 		}
 	}
+
+	return null
+}
+
+function updateHostRoot(
+	current: Fiber | null,
+	workInProgress: Fiber,
+	renderExpirationTime: ExpirationTime
+) {
+	// TODO: push context
+	const udpateQueue = workInProgress.updateQueue
+	const nextProps = workInProgress.pendingProps
+	const prevState = workInProgress.memoizedState
+	const prevChildren = prevState !== null ? prevState.element : null
+	processUpdateQueue(
+		workInProgress,
+		udpateQueue!,
+		nextProps,
+		null,
+		renderExpirationTime
+	)
+
+	const nextState = workInProgress.memoizedState
+	const nextChildren = nextState.element
+	if (prevChildren === nextChildren) {
+		// TODO: hydrate
+		return bailoutOnAlreadyFinishdWork(
+			current,
+			workInProgress,
+			renderExpirationTime
+		)
+	}
+	// TODO: hydrate
+
+	reconcileChildren(current, workInProgress, nextChildren, renderExpirationTime)
+
+	return workInProgress.child
+}
+
+function updateHostComponent(
+	current: Fiber | null,
+	workInProgress: Fiber,
+	renderExpirationTime: ExpirationTime
+) {
+	// TODO: push context
+
+	const type = workInProgress.type
+	const nextProps = workInProgress.pendingProps
+	const prevProps = current !== null ? current.memoizedProps : null
+	let nextChildren = nextProps.children
+	const isDirectTextChild = shouldSetTextContent(type, nextProps)
+
+	if (isDirectTextChild) {
+		return null
+	} else if (prevProps !== null && shouldSetTextContent(type, prevProps)) {
+		workInProgress.effectTag |= ContentReset
+	}
+
+	// TODO: mark ref
+
+	if (renderExpirationTime !== Never && !!nextProps.hidden) {
+		// off screen
+		workInProgress.expirationTime = workInProgress.childExpirationTime = Never
+		return null
+	}
+
+	reconcileChildren(current, workInProgress, nextChildren, renderExpirationTime)
+
+	return workInProgress.child
+}
+
+function updateHostText(current: Fiber | null, workInProgress: Fiber) {
+	// TODO: hydrate
 
 	return null
 }
