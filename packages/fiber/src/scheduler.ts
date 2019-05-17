@@ -23,8 +23,10 @@ import {
 } from '@ts-react/scheduler'
 import { Fiber, createWorkInProgress } from './fiber'
 import { FiberRoot } from './fiberRoot'
-import { HostRoot } from '@ts-react/shared'
+import { HostRoot, Incomplete, NoEffect, PerformedWork } from '@ts-react/shared'
 import { beginWork } from './beginwork'
+import { ReactCurrentDispatcher, ContextOnlyDispatcher } from './fiberHooks'
+import { completeWork } from './completeWork'
 
 enum WorkPhase {
 	NotWorking,
@@ -214,7 +216,11 @@ function renderRoot(
 	if (workInProgress !== null) {
 		const prevWorkPhase = workPhase
 		workPhase = RenderPhase
-		// TODO: dispatcher
+		let prevDispatcher = ReactCurrentDispatcher.current
+		if (prevDispatcher === null) {
+			prevDispatcher = ContextOnlyDispatcher
+		}
+		ReactCurrentDispatcher.current = ContextOnlyDispatcher
 
 		if (isSync) {
 			if (expirationTime !== Sync) {
@@ -222,7 +228,8 @@ function renderRoot(
 				const currentTime = requestCurrentTime()
 				if (currentTime < expirationTime) {
 					workPhase = prevWorkPhase
-					// TODO: reset for context and dispatcher
+					// TODO: reset for context
+					ReactCurrentDispatcher.current = prevDispatcher
 					return renderRoot.bind(null, root, currentTime)
 				}
 			}
@@ -244,12 +251,16 @@ function renderRoot(
 		} while (true)
 
 		workPhase = prevWorkPhase
-		// TODO: reset context and dispatcher
+		// TODO: reset context
+		ReactCurrentDispatcher.current = prevDispatcher
 
 		if (workInProgress !== null) {
 			return renderRoot.bind(null, root, expirationTime)
 		}
 	}
+
+	root.finishedWork = root.current.alternate
+	root.finishedExpirationTime = expirationTime
 
 	// TODO: lock? why?
 
@@ -280,7 +291,82 @@ function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
 	return next
 }
 
+function resetChildExpirationTime(completedWork: Fiber) {
+	if (
+		renderExpirationTime !== Never &&
+		completedWork.childExpirationTime === Never
+	) {
+		// child hidden
+		return
+	}
+	let newChildExpirationTime = NoWork
+	let child = completedWork.child
+	while (child !== null) {
+		const childUpdateExpirationTime = child.expirationTime
+		const childChildExpirationTime = child.childExpirationTime
+		if (childUpdateExpirationTime > newChildExpirationTime) {
+			newChildExpirationTime = childUpdateExpirationTime
+		}
+		if (childChildExpirationTime > newChildExpirationTime) {
+			newChildExpirationTime = childChildExpirationTime
+		}
+		child = child.sibling
+	}
+
+	completedWork.childExpirationTime = newChildExpirationTime
+}
+
 function completeUnitOfWork(unitOfWork: Fiber): Fiber | null {
+	workInProgress = unitOfWork
+
+	do {
+		const current = workInProgress.alternate
+		const returnFiber: Fiber | null = workInProgress.return
+
+		if ((workInProgress.effectTag & Incomplete) === NoEffect) {
+			const next = completeWork(current, workInProgress, renderExpirationTime)
+			resetChildExpirationTime(workInProgress)
+			if (next !== null) {
+				return next
+			}
+			if (
+				returnFiber !== null &&
+				(returnFiber.effectTag & Incomplete) === NoEffect
+			) {
+				if (returnFiber.firstEffect === null) {
+					returnFiber.firstEffect = workInProgress.firstEffect
+				}
+				if (workInProgress.lastEffect !== null) {
+					if (returnFiber.lastEffect !== null) {
+						returnFiber.lastEffect.nextEffect = workInProgress.firstEffect
+					}
+					returnFiber.lastEffect = workInProgress.lastEffect
+				}
+
+				const effectTag = workInProgress.effectTag
+				if (effectTag > PerformedWork) {
+					if (returnFiber.lastEffect !== null) {
+						returnFiber.lastEffect.nextEffect = workInProgress
+					} else {
+						returnFiber.firstEffect = workInProgress
+					}
+					returnFiber.lastEffect = workInProgress
+				}
+			}
+		} else {
+			// error or suspense
+			// TODO: unwind work
+		}
+		const siblingFiber = workInProgress.sibling
+		if (siblingFiber !== null) {
+			return siblingFiber
+		}
+		workInProgress = returnFiber
+	} while (workInProgress !== null)
+
+	if (workInProgressRootExitStatus === RootIncomplete) {
+		workInProgressRootExitStatus = RootCompleted
+	}
 	return null
 }
 

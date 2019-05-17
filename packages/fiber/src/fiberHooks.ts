@@ -191,7 +191,7 @@ function invalidHooks(): any {
 	console.error('invalid hooks')
 }
 
-const ContextOnlyDispatcher: Dispatcher = {
+export const ContextOnlyDispatcher: Dispatcher = {
 	useState: invalidHooks,
 	useCallback: invalidHooks,
 	useEffect: invalidHooks,
@@ -199,7 +199,7 @@ const ContextOnlyDispatcher: Dispatcher = {
 	useMemo: invalidHooks,
 	useReducer: invalidHooks,
 }
-const HooksDispatcherOnMount: Dispatcher = {
+export const HooksDispatcherOnMount: Dispatcher = {
 	useState: mountState,
 	useCallback: mountCallback,
 	useEffect: mountEffect,
@@ -207,7 +207,7 @@ const HooksDispatcherOnMount: Dispatcher = {
 	useMemo: mountMemo,
 	useReducer: mountReducer,
 }
-const HooksDispatcherOnUpdate: Dispatcher = {
+export const HooksDispatcherOnUpdate: Dispatcher = {
 	useState: updateState,
 	useCallback: updateCallback,
 	useEffect: updateEffect,
